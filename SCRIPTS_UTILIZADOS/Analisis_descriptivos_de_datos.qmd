@@ -1,0 +1,398 @@
+---
+title: "PC1-3"
+author: 
+  - name: Grupo 10
+format: html
+---
+
+# Práctica Calificada 1 - 3
+
+| Nombres                           | Grupo | Porcentaje de participación |
+|-----------------------------------|-------|-----------------------------|
+| De la Cruz Ayala Ángel Fabricio   | 10    | 100%                        |
+| Espino Marcos Angelly Britney     | 10    | 100%                        |
+| Gutierrez Inca Antony Alexander   | 10    | 100%                        |
+| Palomino Pajares Jorge Erick      | 10    | 100%                        |
+| Valdivia Intimayta Stefani Esther | 10    | 100%                        |
+| Vasquez Aquino Nayely Miluska     | 10    | 100%                        |
+
+## 1. Instalación y carga de paquetes
+
+Utilizaremos la función `install.packages()` para instalar los paquetes `finalfit` y `flextable` y la función library para cargar los paquetes necesarios. Los paquetes finalfit y flextable serán necesarios para generar tablas descriptivas.
+
+```{r}
+# install.packages("finalfit")
+# install.packages("flextable")
+# install.packages("gtsummary")
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(rio)
+library(gtsummary) ## Para la "Tabla 1"
+library(finalfit) ## Para recodificar
+library(flextable) ## Para exportar tablas
+```
+
+Para continuar con el proceso de usaremos el dataset asignado pero ya limpio (esta dataset limpia se genera automaticamente en el documento en Quarto de la PC1-2 que fue entregada la semana pasada) la cual contiene información de pacientes con tiorides. Abajo, el código para importar el dataset. El nombre de nuestar dataset es `tiorides_limpio` el cual esta dentro de nuestra carpeta "data".
+
+```{r}
+data_tiroides = import(here("data", "tiroides_limpio.csv"))
+```
+
+## 2. Resumen de variables
+
+### 2.1. Resumen de variables numéricas
+
+-   **Edad**: es de tipo **numérica discreta** (porque en el dataset asignado se registra en años enteros, pero de igual forma es una magnitud de tiempo que puede tomar valores dentro de un rango continuo, pero para este caso no). Pese a no ser una variable numérica continua, nos permite calcular medidas de tendencia central (media, mediana) y dispersión (desviación estándar, rango, RI).
+
+#### 2.1.1. ¿Mediana o media? ¿Desviación estándar o rango intercuartílico?
+
+La elección de las medidas depende de la distribución de la variable:
+
+-   Si la edad se distribuye de forma simétrica, la media y la desviación estándar representan bien a la población.
+
+-   Si hay asimetría o valores extremos, conviene usar la mediana y el rango intercuartílico como medidas más robustas.
+
+Esto puede evaluarse con un histograma de la edad:
+
+```{r}
+hist(data_tiroides$edad, main = "Distribución de la edad", xlab = "Edad (años)")
+```
+
+La **variable Edad muestra una distribución asimétrica** hacia la derecha, con mayor **concentración de pacientes entre los 25 y 40 años** y una cola de valores hacia edades más avanzadas. Por este motivo, se considera **más adecuado describir esta variable mediante la mediana y el rango intercuartílico (RI)**, ya que son medidas más robustas frente a la presencia de valores extremos, en lugar de utilizar la media y la desviación estándar.
+
+```{r}
+# Mediana de la edad
+median(data_tiroides$edad, na.rm = TRUE)
+
+# Rango intercuartílico (Q3 - Q1)
+IQR(data_tiroides$edad, na.rm = TRUE)
+
+# Cuartiles individuales:
+quantile(data_tiroides$edad, probs = c(0.25, 0.5, 0.75), na.rm = TRUE)
+```
+
+Entonces podemos decir que:
+
+-   La mediana de la edad de los pacientes es 37 años, lo que **significa que la mitad de los pacientes tiene menos de 37 años y la otra mitad más de 37 años**.
+
+-   El rango intercuartílico (RI) es 22 años, que se calcula como Q3 – Q1 (51 – 29). Esto **indica que el 50% central de los pacientes tiene edades entre 29 y 51 años**.
+
+-   La distribución está algo concentrada en ese intervalo (29–51), pero como ya vimos en el histograma, la **cola hacia la derecha muestra que hay pacientes de más edad que “estiran” la distribución (por eso elegimos mediana y RI)**.
+
+### 2.2. Resumen de variables categóricas
+
+#### 2.2.1. Variables categóricas nominales
+
+Estas variables **no poseen un orden jerárquico natural** entre sus categorías. Se utilizan únicamente para **clasificar o identificar grupos** y no tiene sentido compararlas como “mayor” o “menor”. Son útiles para **frecuencias absolutas y relativas**, pero no para cálculos de promedio o mediana.
+
+-   **Variable Género**
+
+Para la **variable genero**, se calcularon las frecuencias absolutas y relativas con el fin de describir la distribución de los pacientes según sexo.
+
+```{r}
+data_tiroides |> 
+  count(genero, sort = TRUE)
+```
+
+El resultado muestra que existen **312 pacientes de sexo femenino y 71 pacientes de sexo masculino** en la base de datos, lo que indica un **predominio claro del sexo femenino**.
+
+```{r}
+table(data_tiroides$genero, useNA = "ifany")
+```
+
+La tabla anterior confirma que no existen valores perdidos en la variable genero. Los conteos son idénticos a los obtenidos con count().
+
+```{r}
+prop.table(table(data_tiroides$genero, useNA = "ifany"))
+```
+
+Al calcular la proporción, observamos que el **81.5% de los pacientes son de sexo femenino y el 18.5% de sexo masculino**. Esto refuerza la conclusión de que la mayoría de la muestra corresponde a mujeres.
+
+-   **Variable Fumador**
+
+Para la **variable fumador**, se calcularon las frecuencias absolutas y relativas con el fin de conocer la distribución de pacientes según el consumo actual de tabaco.
+
+```{r}
+data_tiroides |> 
+  count(fumador, sort = TRUE)
+
+table(data_tiroides$fumador, useNA = "ifany")
+
+prop.table(table(data_tiroides$fumador, useNA = "ifany"))
+```
+
+Los resultados muestran que existen **334 pacientes no fumadores y 49 pacientes fumadores**, lo que evidencia un predominio de personas no fumadoras en la muestra. En términos proporcionales, esto corresponde aproximadamente a **87.2% de no fumadores y 12.8% de fumadores, reflejando que la mayoría de la población estudiada no consume tabaco actualmente**.
+
+-   **Variable Historia_Fumador**
+
+La **variable historia_fumador** permite identificar a los pacientes con antecedentes previos de consumo de tabaco, aunque actualmente no sean fumadores. Se calcularon las frecuencias absolutas y relativas para describir esta característica en la población de estudio.
+
+```{r}
+data_tiroides |> 
+  count(historia_fumador, sort = TRUE)
+
+table(data_tiroides$historia_fumador, useNA = "ifany")
+
+prop.table(table(data_tiroides$historia_fumador, useNA = "ifany"))
+```
+
+Los resultados muestran que **355 pacientes no presentan antecedentes de tabaquismo y 28 sí reportan historia de consumo**. Esto significa que la gran mayoría de la muestra no ha tenido el hábito de fumar previamente. En términos relativos, se observa que el **92.7% de los pacientes no tiene antecedentes de tabaquismo, mientras que el 7.3% sí los tiene, lo cual refleja que el antecedente de consumo de tabaco es poco frecuente en la población analizada**.
+
+-   **Variable Historia_Radioterapia**
+
+La **variable historia_radioterapia** indica si los pacientes tuvieron exposición previa a radioterapia en la región cervical, lo cual es un antecedente clínico relevante. Se calcularon las frecuencias absolutas y relativas para describir esta condición en la muestra.
+
+```{r}
+data_tiroides |> 
+  count(historia_radioterapia, sort = TRUE)
+
+table(data_tiroides$historia_radioterapia, useNA = "ifany")
+
+prop.table(table(data_tiroides$historia_radioterapia, useNA = "ifany"))
+```
+
+Los resultados muestran que **376 pacientes no recibieron radioterapia previa, mientras que solo 7 sí presentan dicho antecedente**. En términos porcentuales, esto corresponde a el **98.2% sin historia de radioterapia y el 1.8% con antecedente de radioterapia**. Estos datos evidencian que la exposición previa a radioterapia es un evento poco frecuente dentro de la población analizada.
+
+-   **Variable Funcion_Tiroide**
+
+La **variable funcion_tiroidea** describe el estado funcional de la glándula tiroides en los pacientes. Este parámetro es relevante porque puede influir en la evolución clínica y en la respuesta al tratamiento.
+
+```{r}
+data_tiroides |> 
+  count(funcion_tiroidea, sort = TRUE)
+
+table(data_tiroides$funcion_tiroidea, useNA = "ifany")
+
+prop.table(table(data_tiroides$funcion_tiroidea, useNA = "ifany"))
+```
+
+Los resultados muestran que la mayoría de pacientes son **332 eutiroideos, mientras que se registraron 20 con hipertiroidismo clínico, 12 con hipotiroidismo clínico, 14 con hipotiroidismo subclínico y 5 con hipertiroidismo subclínico**. En términos porcentuales, esto corresponde aproximadamente a **86.7% eutiroideos, 5.2% con hipertiroidismo clínico, 3.6% con hipotiroidismo subclínico, 3.1% con hipotiroidismo clínico y 1.3% con hipertiroidismo subclínico**. Estos datos reflejan que la gran mayoría de la población estudiada presenta una función tiroidea normal.
+
+-   **Variable Examen_Físico**
+
+La **variable examen_físico** describe los hallazgos observados en la exploración clínica de la glándula tiroides. Estos hallazgos permiten clasificar a los pacientes según la presencia y tipo de bocio, así como identificar si no se encontraron alteraciones.
+
+```{r}
+data_tiroides |> 
+  count(examen_fisico, sort = TRUE)
+
+table(data_tiroides$examen_fisico, useNA = "ifany")
+
+prop.table(table(data_tiroides$examen_fisico, useNA = "ifany"))
+```
+
+Los resultados muestran que **140 pacientes presentan bocio nodular único-derecho, 89 bocio nodular único-izquierdo, 140 bocio multinodular, 7 bocio difuso y 7 sin hallazgos (normal)**. En términos porcentuales, esto corresponde aproximadamente a **36.6% con bocio nodular único-derecho, 23.3% con bocio nodular único-izquierdo, 36.6% con bocio multinodular, 1.8% con bocio difuso y 1.8% sin hallazgos**. Estos resultados reflejan que la mayoría de los pacientes presentan algún tipo de bocio nodular, siendo más frecuentes los casos de bocio multinodular y nodular único-derecho.
+
+-   **Variable Adenopatías**
+
+La **variable adenopatías** identifica la presencia y localización de ganglios cervicales al momento del diagnóstico.
+
+```{r}
+data_tiroides |> 
+  count(adenopatias, sort = TRUE)
+
+table(data_tiroides$adenopatias, useNA = "ifany")
+
+prop.table(table(data_tiroides$adenopatias, useNA = "ifany"))
+```
+
+Los resultados muestran que **la mayoría de los pacientes no presentaron adenopatías (72.3%), mientras que un 12.5% tuvo compromiso derecho, 8.4% bilateral y 4.4% izquierdo. Las categorías extenso (1.8%) y posterior (0.5%) fueron poco frecuentes**.
+
+-   **Variable Patología**
+
+La **variable patología** indica el tipo histológico del carcinoma diferenciado de tiroides.
+
+```{r}
+data_tiroides |> 
+  count(patologia, sort = TRUE)
+
+table(data_tiroides$patologia, useNA = "ifany")
+
+prop.table(table(data_tiroides$patologia, useNA = "ifany"))
+```
+
+Se observa que **el carcinoma papilar es el más frecuente (74.9%), seguido por el microcarcinoma papilar (12.5%), el carcinoma folicular (7.3%) y el carcinoma de células Hürthle (5.2%)**.
+
+-   **Variable Focalidad**
+
+La **variable focalidad** indica si el carcinoma tiroideo se presenta en un solo foco tumoral o en múltiples focos.
+
+```{r}
+data_tiroides |> 
+  count(focalidad, sort = TRUE)
+
+table(data_tiroides$focalidad, useNA = "ifany")
+
+prop.table(table(data_tiroides$focalidad, useNA = "ifany"))
+```
+
+Los resultados muestran que **247 pacientes (64.5%) tienen enfermedad unifocal y 136 (35.5%) multifocal**. Esto refleja que el compromiso unifocal es más común en la muestra.
+
+-   **Variable Respuesta**
+
+La **variable respuesta** evalúa la evolución del paciente tras el tratamiento inicial, clasificando el resultado en cuatro categorías.
+
+```{r}
+data_tiroides |> 
+  count(respuesta, sort = TRUE)
+
+table(data_tiroides$respuesta, useNA = "ifany")
+
+prop.table(table(data_tiroides$respuesta, useNA = "ifany"))
+```
+
+Los resultados muestran que **208 pacientes (54.3%) tuvieron una respuesta excelente, seguidos de 91 (23.8%) con respuesta incompleta estructural, 61 (15.9%) indeterminados y 23 (6.0%) con respuesta incompleta bioquímica**. Esto indica que más de la mitad de los pacientes alcanzaron un desenlace favorable.
+
+-   **Variable Recurrencia**
+
+La **variable recurrencia** indica si el paciente presentó o no reaparición de la enfermedad durante el seguimiento.
+
+```{r}
+data_tiroides |> 
+  count(recurrencia, sort = TRUE)
+
+table(data_tiroides$recurrencia, useNA = "ifany")
+
+prop.table(table(data_tiroides$recurrencia, useNA = "ifany"))
+```
+
+Los resultados muestran que **275 pacientes (71.8%) no tuvieron recurrencia, mientras que 108 (28.2%) sí presentaron recurrencia**. Esto evidencia que, aunque la mayoría mantiene un control adecuado tras el tratamiento, existe un porcentaje considerable de pacientes que experimentan reaparición de la enfermedad.
+
+#### 2.2.2. Variables categóricas ordinales
+
+-   **Variable Riesgo**
+
+La **variable riesgo** clasifica a los pacientes según la estratificación pronóstica de la ATA (bajo, intermedio y alto).
+
+```{r}
+prop.table(table(data_tiroides$riesgo, useNA = "ifany"))
+```
+
+Los resultados muestran que el **65.0% de los pacientes fueron clasificados con riesgo bajo, mientras que 26.6% se ubicaron en riesgo intermedio y 8.4% en riesgo alto**. Esto indica que la mayoría de los pacientes pertenecen al grupo de mejor pronóstico.
+
+-   **Variable T (TNM)**
+
+La **variable T** representa la extensión del tumor primario.
+
+```{r}
+prop.table(table(data_tiroides$t, useNA = "ifany"))
+```
+
+Los resultados muestran que **los estadios más frecuentes fueron T2 (39.4%) y T3a (25.1%), seguidos de T1a (12.8%) y T1b (11.2%). Los estadios avanzados (T3b, T4a y T4b) fueron menos comunes (≈11% en conjunto)**.
+
+-   **Variable N (TNM)**
+
+La **variable N** describe el compromiso ganglionar regional.
+
+```{r}
+prop.table(table(data_tiroides$n, useNA = "ifany"))
+```
+
+Se observa que **la mayoría de pacientes no presentó afectación ganglionar (N0: 69.9%), mientras que un 24.3% tuvo compromiso N1b y solo un 5.7% N1a**.
+
+-   **Variable M (TNM)**
+
+La variable M indica la presencia de metástasis a distancia.
+
+```{r}
+prop.table(table(data_tiroides$m, useNA = "ifany"))
+```
+
+Los resultados muestran que **la gran mayoría de los pacientes no presentó metástasis (M0: 95.3%), en tanto que un 4.7% sí desarrolló metástasis (M1)**.
+
+-   **Variable Etapa**
+
+La **variable etapa** corresponde a la clasificación clínica global según el sistema AJCC, que combina los parámetros TNM para determinar el estadio de la enfermedad.
+
+```{r}
+prop.table(table(data_tiroides$etapa, useNA = "ifany"))
+```
+
+Los resultados muestran que **la gran mayoría de los pacientes se encuentra en etapa I (86.9%), mientras que las etapas II (8.4%) y III (1.0%) son menos frecuentes. Los estadios avanzados IVA (0.8%) e IVB (2.9%) representan un porcentaje reducido**.
+
+En conjunto, esto **evidencia que casi nueve de cada diez pacientes fueron diagnosticados en etapas tempranas (I–II)**, lo que refleja un perfil clínico favorable para el manejo de la enfermedad.
+
+## 3. Tabla 1
+
+#### 3.1 Configuración del estilo de tablas
+
+Se define el idioma de salida de las tablas como **español** y se ajusta el formato de acuerdo con el estilo de la revista **JAMA**, asegurando que la presentación sea clara, estandarizada y apta para publicación científica.
+
+```{r}
+theme_gtsummary_language(language = "es")
+theme_gtsummary_journal(journal = "jama")
+```
+
+#### 3.2 Preparación de los datos
+
+En esta sección se realiza el **preprocesamiento de variables**:
+
+-   Se convierten las variables en factores, lo que permite generar resúmenes estadísticos categóricos.
+
+-   Se ajusta el orden de los niveles (ej. "Femenino" antes de "Masculino") para una mejor interpretación.
+
+-   Se asignan etiquetas descriptivas mediante ff_label() que serán utilizadas en la tabla final.
+
+```{r}
+data_tiroides_0 <- data_tiroides |>
+  mutate(
+    edad = ff_label(edad, "Edad (años)"),
+    genero = as.factor(genero) |> fct_relevel("Femenino", "Masculino") |> ff_label("Sexo"),
+    fumador = as.factor(fumador) |> fct_relevel("No", "Sí") |> ff_label("Fumador actual"),
+    historia_fumador = as.factor(historia_fumador) |> fct_relevel("No", "Sí") |> ff_label("Historia previa de tabaquismo"),
+    historia_radioterapia = as.factor(historia_radioterapia) |> fct_relevel("No", "Sí") |> ff_label("Historia previa de radioterapia"),
+    funcion_tiroidea = as.factor(funcion_tiroidea) |> ff_label("Estado funcional de la tiroides"),
+    examen_fisico = as.factor(examen_fisico) |> ff_label("Hallazgos en examen físico"),
+    adenopatias = as.factor(adenopatias) |> ff_label("Adenopatías cervicales"),
+    #patologia = as.factor(patologia) |> ff_label("Tipo histológico"),
+    focalidad = as.factor(focalidad) |> fct_relevel("Unifocal", "Multifocal") |> ff_label("Focalidad tumoral"),
+    riesgo = as.factor(riesgo) |> fct_relevel("Bajo", "Intermedio", "Alto") |> ff_label("Riesgo ATA"),
+    t = as.factor(t) |> ff_label("Clasificación T"),
+    n = as.factor(n) |> ff_label("Clasificación N"),
+    m = as.factor(m) |> ff_label("Clasificación M"),
+    etapa = as.factor(etapa) |> ff_label("Etapa AJCC"),
+    respuesta = as.factor(respuesta) |> ff_label("Respuesta al tratamiento"),
+    recurrencia = as.factor(recurrencia) |> fct_relevel("No", "Sí") |> ff_label("Recurrencia")
+  )
+```
+
+#### 3.3 Construcción de la Tabla 1
+
+Aquí se genera la **Tabla 1 descriptiva**:
+
+-   Se seleccionan las variables clínicas y demográficas relevantes.
+
+-   Se aplica tbl_summary() agrupando los resultados **según el tipo histológico (patología)**.
+
+-   Se añade una cabecera general sobre las columnas estadísticas (modify_spanning_header).
+
+-   Se incorpora una columna adicional con los resultados globales (add_overall).
+
+```{r}
+tabla_1_tiroides <- data_tiroides_0 |> 
+  select(
+    patologia,  # <- añadir patologia
+    edad, genero, fumador, historia_fumador, historia_radioterapia,
+    funcion_tiroidea, examen_fisico, adenopatias,
+    focalidad, riesgo, t, n, m, etapa, respuesta, recurrencia
+  ) |> 
+  tbl_summary(by = patologia) |>  # agrupar por tipo histológico
+  modify_spanning_header(all_stat_cols() ~ "**Tipo histológico**") |>
+  add_overall()
+
+tabla_1_tiroides
+```
+
+El resultado es una tabla estandarizada que resume las características de la cohorte de pacientes según el tipo histológico de la enfermedad.
+
+## 4. Exportación de la tabla
+
+En esta etapa, la tabla generada se convierte a un objeto flextable, lo que permite una mejor compatibilidad con procesadores de texto. Posteriormente, se guarda en un **archivo Word (.docx)**, facilitando su inclusión en informes o publicaciones.
+
+```{r}
+tabla_1_tiroides_flex = as_flex_table(tabla_1_tiroides) # Convertir a flex table
+save_as_docx(tabla_1_tiroides_flex, path = "tabla_1__tiroides_flex.docx") # Guardar tabla
+```

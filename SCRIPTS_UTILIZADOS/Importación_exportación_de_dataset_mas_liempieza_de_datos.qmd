@@ -1,0 +1,781 @@
+---
+title: "PC1-2"
+author: 
+  - name: Grupo 10
+format: html
+---
+
+# Práctica Calificada 1 - 2
+
+| Nombres                           | Grupo | Porcentaje de participación |
+|-----------------------------------|-------|-----------------------------|
+| De la Cruz Ayala Ángel Fabricio   | 10    | 100%                        |
+| Espino Marcos Angelly Britney     | 10    | 100%                        |
+| Gutierrez Inca Antony Alexander   | 10    | 100%                        |
+| Palomino Pajares Jorge Erick      | 10    | 100%                        |
+| Valdivia Intimayta Stefani Esther | 10    | 100%                        |
+| Vasquez Aquino Nayely Miluska     | 10    | 100%                        |
+
+## 1. Importación del dataset asignado
+
+En este paso se cargan las librerías necesarias (`tidyverse`, `janitor`, `rio` y `here`) que permiten la manipulación, limpieza y organización de datos. Posteriormente, se importa el archivo `tiroides.csv` desde la carpeta `data`.
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(rio)
+library(here)
+```
+
+```{r}
+data_tiroides = import(here("data", "tiroides.csv"))
+```
+
+Se confirma que el dataset fue importado correctamente y se encuentra disponible en el objeto data_tiroides.
+
+## 3. Convertir Dataset a Tipo Tibble
+
+El dataset importado se convierte en un objeto de tipo **tibble**, el cual es una estructura de datos optimizada de `tidyverse` que facilita la exploración y manipulación de información.
+
+```{r}
+data_tiroides_1 = data_tiroides |> 
+  as_tibble()
+class(data_tiroides_1)
+```
+
+El resultado confirma que `data_tiroides_1` ahora es de tipo tibble.
+
+## 4. Limpieza y Transformación de variables
+
+En este paso estandarizamos los nombres de las variables con `clean_names()` para evitar espacios, acentos o mayúsculas, y luego listamos los nombres resultantes para verificar el cambio.
+
+```{r}
+data_tiroides_2 = data_tiroides_1 |> 
+  clean_names()
+data_tiroides_2 |> names()
+```
+
+Con esto, los nombres de columnas quedan normalizados y consistentes para las siguientes transformaciones. No se realizan `rename()` porque no hay variables que necesiten reemplazo: los nombres no presentan errores ortográficos ni problemas de legibilidad.
+
+Ahora, convertimos las cadenas vacías ("") a valores faltantes NA en todas las columnas de tipo carácter. Esto homogeniza la representación de datos ausentes y facilita los filtros/agrupaciones posteriores.
+
+```{r}
+data_tiroides_2_ = mutate_if(data_tiroides_2, is.character, list(~na_if(.,"")))
+```
+
+Tras este paso, cualquier celda vacía en variables de texto pasa a ser NA, manteniendo intactos los tipos numéricos y lógicos.
+
+Finalmente, eliminamos filas y columnas completamente vacías para quedarnos solo con información útil. Esto reduce ruido y evita columnas/filas sin datos que podrían afectar resúmenes o gráficos.
+
+```{r}
+data_tiroides_3 = data_tiroides_2_ |> 
+  remove_empty(which = c("rows", "cols"))
+```
+
+El resultado es un objeto sin filas ni columnas vacías. Si existían celdas totalmente en blanco estructuradas en filas/columnas completas, ya fueron removidas, dejando el dataset listo para la limpieza específica por variable.
+
+### 4.1. Limpieza de Variables Demográficas
+
+En este grupo se incluyen las variables relacionadas con las características básicas de los pacientes, tales como edad, género y antecedentes generales. Estas variables permiten describir la composición de la población en estudio, identificar patrones sociodemográficos y facilitar la comparación de resultados entre distintos subgrupos de pacientes.
+
+#### 4.1.1. Limpieza y transformación de la variable edad (Numérica)
+
+La variable "edad" se revisa primero para identificar su distribución y verificar la presencia de valores con caracteres extraños (comillas, barras invertidas). Posteriormente, se limpian dichos caracteres y se convierte la variable en numérica.
+
+```{r}
+data_tiroides_3 |> count(edad)
+data_tiroides_4 <- data_tiroides_3 |>
+  mutate(
+    edad = case_when(
+      TRUE ~ gsub('[\\"\\\\]', '', edad)
+    ),
+    edad = as.numeric(edad)
+  )
+```
+
+De esta manera, edad pasa a ser de tipo numérico y queda lista para análisis estadístico. El chunk comentado debajo muestra el procedimiento original con múltiples condiciones `case_when()`; sin embargo, fue reemplazado por una limpieza más eficiente con gsub() que elimina caracteres no deseados en un solo paso.
+
+```{r}
+# data_tiroides_3 |> count(edad)
+# data_tiroides_3 <- data_tiroides_3 |>
+#   mutate(
+#     edad = case_when(
+#       edad == ""15" ~ "15",
+#       edad == ""17" ~ "17",
+#       edad == ""18" ~ "18",
+#       edad == ""19" ~ "19",
+#       edad == ""20" ~ "20",
+#       edad == ""21" ~ "21",
+#       edad == ""22" ~ "22",
+#       edad == ""23" ~ "23",
+#       edad == ""24" ~ "24",
+#       edad == ""25" ~ "25",
+#       edad == ""26" ~ "26",
+#       edad == ""27" ~ "27",
+#       edad == ""28" ~ "28",
+#       edad == ""29" ~ "29",
+#       edad == ""30" ~ "30",
+#       edad == ""31" ~ "31",
+#       edad == ""32" ~ "32",
+#       edad == ""33" ~ "33",
+#       edad == ""34" ~ "34",
+#       edad == ""35" ~ "35",
+#       edad == ""36" ~ "36",
+#       edad == ""37" ~ "37",
+#       edad == ""38" ~ "38",
+#       edad == ""39" ~ "39",
+#       edad == ""40" ~ "40",
+#       edad == ""41" ~ "41",
+#       edad == ""42" ~ "42",
+#       edad == ""43" ~ "43",
+#       edad == ""44" ~ "44",
+#       edad == ""45" ~ "45",
+#       edad == ""46" ~ "46",
+#       edad == ""47" ~ "47",
+#       edad == ""48" ~ "48",
+#       edad == ""49" ~ "49",
+#       edad == ""50" ~ "50",
+#       edad == ""51" ~ "51",
+#       edad == ""52" ~ "52",
+#       edad == ""53" ~ "53",
+#       edad == ""54" ~ "54",
+#       edad == ""55" ~ "55",
+#       edad == ""56" ~ "56",
+#       edad == ""57" ~ "57",
+#       edad == ""58" ~ "58",
+#       edad == ""59" ~ "59",
+#       edad == ""60" ~ "60",
+#       edad == ""61" ~ "61",
+#       edad == ""62" ~ "62",
+#       edad == ""63" ~ "63",
+#       edad == ""64" ~ "64",
+#       edad == ""65" ~ "65",
+#       edad == ""66" ~ "66",
+#       edad == ""67" ~ "67",
+#       edad == ""68" ~ "68",
+#       edad == ""69" ~ "69",
+#       edad == ""70" ~ "70",
+#       edad == ""71" ~ "71",
+#       edad == ""72" ~ "72",
+#       edad == ""73" ~ "73",
+#       edad == ""74" ~ "74",
+#       edad == ""75" ~ "75",
+#       edad == ""76" ~ "76",
+#       edad == ""77" ~ "77",
+#       edad == ""78" ~ "78",
+#       edad == ""79" ~ "79",
+#       edad == ""80" ~ "80",
+#       edad == ""81" ~ "81",
+#       edad == ""82" ~ "82",
+#       TRUE ~ edad
+#     ),
+#     edad = as.integer(edad)
+#   )
+```
+
+Luego, se confirma la clase de la variable:
+
+```{r}
+class(data_tiroides_4$edad)
+```
+
+El resultado confirma que edad ahora es un objeto numérico (numeric).
+
+Finalmente, se obtiene un resumen estadístico para comprobar que no existen valores atípicos ni fuera de rango.
+
+```{r}
+summary(data_tiroides_4$edad)
+```
+
+El análisis muestra que no hay valores atípicos en la variable edad, por lo que no se eliminan observaciones.
+
+#### 4.1.2. Limpieza y transformación de la variable genero (Categórica)
+
+Se cuenta la frecuencia de los valores de genero para identificar problemas de codificación. Observamos que algunos registros están rodeados de comillas dobles adicionales.
+
+```{r}
+data_tiroides_4 |> count(genero)
+data_tiroides_5 <- data_tiroides_4 |>
+  mutate(
+    genero = case_when(
+      genero == "\"\"Femenino\"\"" ~ "Femenino",
+      genero == "\"\"Masculino\"\"" ~ "Masculino",
+      TRUE ~ genero
+    ),
+    genero = factor(genero,
+                    levels = c("Femenino", "Masculino"),
+                    labels = c("Femenino", "Masculino"))
+  )
+```
+
+Con esto, genero se transforma en un factor con dos niveles claros: Femenino y Masculino.
+
+```{r}
+data_tiroides_5 |> count(genero)
+```
+
+```{r}
+class(data_tiroides_5$genero)
+```
+
+```{r}
+levels(data_tiroides_5$genero)
+```
+
+El resultado muestra la distribución de frecuencias, confirma que la clase es factor, y que los niveles están correctamente definidos.
+
+#### 4.1.3. Limpieza y transformación de la variable fumador (Categórica)
+
+Se realiza un procedimiento similar con "fumador", que también presenta valores rodeados de comillas.
+
+```{r}
+data_tiroides_5 |> count(fumador) 
+data_tiroides_6 <- data_tiroides_5 |>
+  mutate(
+    fumador = case_when(
+      fumador == "\"\"No\"\"" ~ "No",
+      fumador == "\"\"Sí\"\"" ~ "Sí",
+      TRUE ~ fumador
+    ),
+    fumador = factor(fumador,
+                    levels = c("No", "Sí"),
+                    labels = c("No", "Sí"))
+  )
+```
+
+De esta forma, *fumador* queda convertido en un factor con dos niveles: No y Sí.
+
+```{r}
+data_tiroides_6 |> count(fumador)
+```
+
+```{r}
+class(data_tiroides_6$fumador)
+```
+
+```{r}
+levels(data_tiroides_6$fumador)
+```
+
+Los resultados verifican la correcta codificación.
+
+#### 4.1.4. Limpieza y transformación de la variable historia_fumador (Categórica)
+
+La variable "historia_fumador" presenta registros con comillas dobles innecesarias que dificultan su análisis. Se procede a estandarizar los valores, transformándolos en No o Sí, y posteriormente convertir la variable en un factor categórico para su correcto tratamiento estadístico.
+
+```{r}
+data_tiroides_6 |> count(historia_fumador)
+data_tiroides_7 <- data_tiroides_6 |>
+  mutate(
+    historia_fumador = case_when(
+      historia_fumador == "\"\"No\"\"" ~ "No",
+      historia_fumador == "\"\"Sí\"\"" ~ "Sí",
+      TRUE ~ historia_fumador
+    ),
+    historia_fumador = factor(historia_fumador,
+                    levels = c("No", "Sí"),
+                    labels = c("No", "Sí"))
+  )
+```
+
+```{r}
+data_tiroides_7 |> count(historia_fumador)
+```
+
+```{r}
+class(data_tiroides_7$historia_fumador)
+```
+
+```{r}
+levels(data_tiroides_7$historia_fumador)
+```
+
+Después de la limpieza, la variable queda correctamente definida como factor binario, con niveles No y Sí. Esto permite realizar análisis de frecuencia o cruzar la información con otras variables de manera consistente.
+
+#### 4.1.5. Limpieza y transformación de la variable historia_radioterapia (Categórica)
+
+Se analiza la variable "historia_radioterapia", la cual también presenta problemas de codificación por comillas dobles. La finalidad es estandarizarla para obtener valores claros y luego convertirla en factor.
+
+```{r}
+data_tiroides_7 |> count(historia_radioterapia)
+data_tiroides_8 <- data_tiroides_7 |>
+  mutate(
+    historia_radioterapia = case_when(
+      historia_radioterapia == "\"\"No\"\"" ~ "No",
+      historia_radioterapia == "\"\"Sí\"\"" ~ "Sí",
+      TRUE ~ historia_radioterapia
+    ),
+    historia_radioterapia = factor(historia_radioterapia,
+                    levels = c("No", "Sí"),
+                    labels = c("No", "Sí"))
+  )
+```
+
+```{r}
+data_tiroides_8 |> count(historia_radioterapia)
+```
+
+```{r}
+class(data_tiroides_8$historia_radioterapia)
+```
+
+```{r}
+levels(data_tiroides_8$historia_radioterapia)
+```
+
+La variable queda como factor con dos categorías (No y Sí), eliminando inconsistencias en la codificación y facilitando su uso en análisis descriptivos.
+
+### 4.2. Limpieza de Variables Clínicas
+
+Estas variables recogen la información proveniente de la evaluación clínica inicial, como la función tiroidea, hallazgos al examen físico y la presencia de adenopatías. Su análisis es fundamental para caracterizar el estado clínico de los pacientes al momento del diagnóstico y explorar asociaciones con el comportamiento de la enfermedad.
+
+#### 4.2.1. Limpieza y transformación de la variable funcion_tiroidea (Categórica)
+
+Esta variable contiene distintos diagnósticos clínicos de la función tiroidea, pero los valores estaban rodeados de comillas adicionales. Se limpian estas inconsistencias y se convierten los valores en factores con cinco categorías definidas.
+
+```{r}
+data_tiroides_8 |> count(funcion_tiroidea)
+data_tiroides_9 <- data_tiroides_8 |>
+  mutate(
+      funcion_tiroidea = case_when(
+      funcion_tiroidea == "\"\"Eutiroideo\"\"" ~ "Eutiroideo",
+      funcion_tiroidea == "\"\"Hipertiroidismo clínico\"\"" ~ "Hipertiroidismo clínico",
+      funcion_tiroidea == "\"\"Hipertiroidismo subclínico\"\"" ~ "Hipertiroidismo subclínico",
+      funcion_tiroidea == "\"\"Hipotiroidismo clínico\"\"" ~ "Hipotiroidismo clínico",
+      funcion_tiroidea == "\"\"Hipotiroidismo subclínico\"\"" ~ "Hipotiroidismo subclínico",
+      TRUE ~ funcion_tiroidea
+    ),
+    funcion_tiroidea = factor(funcion_tiroidea,
+                    levels = c("Eutiroideo", "Hipertiroidismo clínico", "Hipertiroidismo subclínico", "Hipotiroidismo clínico", "Hipotiroidismo subclínico" ),
+                    labels = c("Eutiroideo", "Hipertiroidismo clínico", "Hipertiroidismo subclínico", "Hipotiroidismo clínico", "Hipotiroidismo subclínico"))
+  )
+```
+
+```{r}
+data_tiroides_9 |> count(funcion_tiroidea)
+```
+
+```{r}
+class(data_tiroides_9$funcion_tiroidea)
+```
+
+```{r}
+levels(data_tiroides_9$funcion_tiroidea)
+```
+
+Con esto, la variable queda lista para análisis clínicos comparativos entre diferentes diagnósticos, garantizando uniformidad en la codificación.
+
+#### 4.2.2. Limpieza y transformación de la variable examen_fisico (Categórica)
+
+La variable "examen_fisico" describe los hallazgos clínicos al examen físico del paciente. Presentaba comillas innecesarias en los valores, por lo que se procede a limpiarlos y definir un factor con cinco categorías.
+
+```{r}
+data_tiroides_9 |> count(examen_fisico)
+data_tiroides_10 <- data_tiroides_9 |>
+  mutate(
+    examen_fisico = case_when(
+      examen_fisico == "\"\"Bocio difuso\"\"" ~ "Bocio difuso",
+      examen_fisico == "\"\"Bocio multinodular\"\"" ~ "Bocio multinodular",
+      examen_fisico == "\"\"Bocio nodular único-izquierdo\"\"" ~ "Bocio nodular único-izquierdo",
+      examen_fisico == "\"\"Bocio nodular único-derecho\"\"" ~ "Bocio nodular único-derecho",
+      examen_fisico == "\"\"Normal\"\"" ~ "Normal",
+      TRUE ~ examen_fisico
+    ),
+    examen_fisico = factor(examen_fisico,
+                    levels = c("Normal", "Bocio difuso", "Bocio multinodular", "Bocio nodular único-izquierdo", "Bocio nodular único-derecho"),
+                    labels = c("Normal", "Bocio difuso", "Bocio multinodular", "Bocio nodular único-izquierdo", "Bocio nodular único-derecho"))
+  )
+```
+
+```{r}
+data_tiroides_10 |> count(examen_fisico)
+```
+
+```{r}
+class(data_tiroides_10$examen_fisico)
+```
+
+```{r}
+levels(data_tiroides_10$examen_fisico)
+```
+
+Después del procesamiento, *examen_fisico* se convierte en un factor con niveles claros, permitiendo análisis de frecuencia sobre los distintos tipos de hallazgos.
+
+#### 4.2.3. Limpieza y transformación de la variable adenopatias (Categórica)
+
+La variable "adenopatias" recoge información sobre la presencia y localización de ganglios. Los valores originales tenían comillas adicionales, que fueron eliminadas y luego codificadas en seis categorías.
+
+```{r}
+data_tiroides_10 |> count(adenopatias)
+data_tiroides_11 <- data_tiroides_10 |>
+  mutate(
+    adenopatias = case_when(
+      adenopatias == "\"\"No\"\"" ~ "No",
+      adenopatias == "\"\"Izquierda\"\"" ~ "Izquierda",
+      adenopatias == "\"\"Derecha\"\"" ~ "Derecha",
+      adenopatias == "\"\"Bilateral\"\"" ~ "Bilateral",
+      adenopatias == "\"\"Extenso\"\"" ~ "Extenso",
+      adenopatias == "\"\"Posterior\"\"" ~ "Posterior",
+      TRUE ~ adenopatias
+    ),
+    adenopatias = factor(adenopatias,
+                    levels = c("No", "Izquierda", "Derecha", "Bilateral", "Extenso", "Posterior"),
+                    labels = c("No", "Izquierda", "Derecha", "Bilateral", "Extenso", "Posterior"))
+  )
+```
+
+```{r}
+data_tiroides_11 |> count(adenopatias)
+```
+
+```{r}
+class(data_tiroides_11$adenopatias)
+```
+
+```{r}
+levels(data_tiroides_11$adenopatias)
+```
+
+De esta forma, *adenopatias* queda correctamente codificada y lista para estudios descriptivos y comparativos.
+
+### 4.3. Limpieza de Variables Patológicas
+
+Dentro de este conjunto se consideran los hallazgos histopatológicos posteriores al estudio de la pieza quirúrgica, como el tipo de patología, la focalidad tumoral y la clasificación de riesgo. Estas variables aportan información clave sobre la naturaleza de la enfermedad y permiten establecer perfiles pronósticos.
+
+#### 4.3.1. Limpieza y transformación de la variable patologia (Categórica)
+
+La variable "patologia" contiene el diagnóstico histopatológico final. Se identifican etiquetas con comillas dobles redundantes, lo que impide un análisis consistente. El objetivo es estandarizar los valores y convertir la variable a factor con categorías claras para su uso en tablas y análisis comparativos.
+
+```{r}
+data_tiroides_11 |> count(patologia)
+data_tiroides_12 <- data_tiroides_11 |>
+  mutate(
+    patologia = case_when(
+      patologia == "\"\"Microcarcinoma papilar\"\"" ~ "Microcarcinoma papilar",
+      patologia == "\"\"Carcinoma papilar\"\"" ~ "Carcinoma papilar",
+      patologia == "\"\"Carcinoma folicular\"\"" ~ "Carcinoma folicular",
+      patologia == "\"\"Carcinoma de células Hürthle\"\"" ~ "Carcinoma de células Hürthle", 
+      TRUE ~ patologia
+    ),
+    patologia = factor(patologia,
+                    levels = c("Microcarcinoma papilar", "Carcinoma papilar", "Carcinoma folicular", "Carcinoma de células Hürthle"),
+                    labels = c("Microcarcinoma papilar", "Carcinoma papilar", "Carcinoma folicular", "Carcinoma de células Hürthle"))
+  )
+```
+
+La variable queda como factor con cuatro diagnósticos definidos, sin comillas extra, lo que habilita análisis de frecuencia, asociaciones por tipo histológico y segmentaciones por riesgo.
+
+```{r}
+data_tiroides_12 |> count(patologia)
+```
+
+```{r}
+class(data_tiroides_12$patologia)
+```
+
+```{r}
+levels(data_tiroides_12$patologia)
+```
+
+#### 4.3.2. Limpieza y transformación de la variable focalidad (Categórica)
+
+La variable "focalidad" indica si el tumor es único o múltiple. Presentaba comillas superfluas. Se busca normalizar a dos niveles (Unifocal, Multifocal) y tipar como factor.
+
+```{r}
+data_tiroides_12 |> count(focalidad)
+data_tiroides_13 <- data_tiroides_12 |>
+  mutate(
+    focalidad = case_when(
+      focalidad == "\"\"Unifocal\"\"" ~ "Unifocal",
+      focalidad == "\"\"Multifocal\"\"" ~ "Multifocal",
+      TRUE ~ focalidad
+    ),
+    focalidad = factor(focalidad,
+                      levels = c("Unifocal", "Multifocal"),
+                      labels = c("Unifocal", "Multifocal"))
+  )
+```
+
+Todo queda como factor binario correctamente etiquetado, listo para análisis descriptivo y comparaciones clínicas por multiplicidad tumoral.
+
+```{r}
+data_tiroides_13 |> count(focalidad)
+```
+
+```{r}
+class(data_tiroides_13$focalidad)
+```
+
+```{r}
+levels(data_tiroides_13$focalidad)
+```
+
+#### 4.3.3. Limpieza y transformación de la variable riesgo (Categórica)
+
+La variable "riesgo" resume la estratificación (bajo, intermedio, alto), pero con comillas redundantes. Se estandariza y tipa como factor con un orden lógico de niveles.
+
+```{r}
+data_tiroides_13 |> count(riesgo)
+data_tiroides_14 <- data_tiroides_13 |>
+  mutate(
+    riesgo = case_when(
+      riesgo == "\"\"Bajo\"\"" ~ "Bajo",
+      riesgo == "\"\"Intermedio\"\"" ~ "Intermedio",
+      riesgo == "\"\"Alto\"\"" ~ "Alto",
+      TRUE ~ riesgo
+    ),
+    riesgo = factor(riesgo,
+                    levels = c("Bajo", "Intermedio", "Alto"),
+                    labels = c("Bajo", "Intermedio", "Alto"))
+  )
+```
+
+La variable queda como factor ordinal (en el sentido clínico), permitiendo perfiles de riesgo y comparaciones con resultados de seguimiento.
+
+```{r}
+data_tiroides_14 |> count(riesgo)
+```
+
+```{r}
+class(data_tiroides_14$riesgo)
+```
+
+```{r}
+levels(data_tiroides_14$riesgo)
+```
+
+### 4.4. Limpieza de Variables TNM
+
+Este bloque corresponde a la clasificación internacional TNM, que evalúa el tamaño del tumor primario (T), la afectación de ganglios linfáticos (N), la presencia de metástasis a distancia (M) y la etapa global de la enfermedad. Estas variables permiten estandarizar la severidad del cáncer y comparar los casos en relación con criterios internacionales.
+
+#### 4.4.1. Limpieza y transformación de la variable t (Categórica)
+
+T indica el tamaño/extensión tumoral local (T1a–T4b). Se corrigen comillas y se define el set de niveles esperado.
+
+```{r}
+data_tiroides_14 |> count(t)
+data_tiroides_15 <- data_tiroides_14 |>
+  mutate(
+    t = case_when(
+      t == "\"\"T1a\"\"" ~ "T1a",
+      t == "\"\"T1b\"\"" ~ "T1b",
+      t == "\"\"T2\"\"" ~ "T2",
+      t == "\"\"T3a\"\"" ~ "T3a",
+      t == "\"\"T3b\"\"" ~ "T3b",
+      t == "\"\"T4a\"\"" ~ "T4a",
+      t == "\"\"T4b\"\"" ~ "T4b",
+      TRUE ~ t
+    ),
+    t = factor(t,
+              levels = c("T1a", "T1b", "T2", "T3a", "T3b", "T4a", "T4b"),
+              labels = c("T1a", "T1b", "T2", "T3a", "T3b", "T4a", "T4b"))
+  )
+```
+
+*t* queda codificada como factor con siete niveles, lo que permite describir la distribución por categoría T y realizar análisis estratificados.
+
+```{r}
+data_tiroides_15 |> count(t)
+```
+
+```{r}
+class(data_tiroides_15$t)
+```
+
+```{r}
+levels(data_tiroides_15$t)
+```
+
+#### 4.4.2. Limpieza y transformación de la variable n (Categórica)
+
+N identifica la afectación ganglionar (N0, N1a, N1b). Se normalizan etiquetas y se define como factor.
+
+```{r}
+data_tiroides_15 |> count(n)
+data_tiroides_16 <- data_tiroides_15 |>
+  mutate(
+    n = case_when(
+      n == "\"\"N0\"\"" ~ "N0",
+      n == "\"\"N1a\"\"" ~ "N1a",
+      n == "\"\"N1b\"\"" ~ "N1b",
+      TRUE ~ n
+    ),
+    n = factor(n,
+              levels = c("N0", "N1a", "N1b"),
+              labels = c("N0", "N1a", "N1b"))
+  )
+```
+
+*n* queda como factor con tres niveles, listo para frecuencias, tablas cruzadas y análisis de asociación con recurrencia.
+
+```{r}
+data_tiroides_16 |> count(n)
+```
+
+```{r}
+class(data_tiroides_16$n)
+```
+
+```{r}
+levels(data_tiroides_16$n)
+```
+
+#### 4.4.3. Limpieza y transformación de la variable m (Categórica)
+
+M registra presencia de metástasis a distancia. Se corrige la codificación (M0, M1) y se tipa como factor.
+
+```{r}
+data_tiroides_16 |> count(m)
+data_tiroides_17 <- data_tiroides_16 |>
+  mutate(
+    m = case_when(
+      m == "\"\"M0\"\"" ~ "M0",
+      m == "\"\"M1\"\"" ~ "M1",
+      TRUE ~ m
+    ),
+    m = factor(m,
+              levels = c("M0", "M1"),
+              labels = c("M0", "M1"))
+  )
+```
+
+*m* queda como factor binario (M0/M1), facilitando análisis de supervivencia o recurrencia condicionados por metástasis.
+
+```{r}
+data_tiroides_17 |> count(m)
+```
+
+```{r}
+class(data_tiroides_17$m)
+```
+
+```{r}
+levels(data_tiroides_17$m)
+```
+
+#### 4.4.4. Limpieza y transformación de la variable etapa (Categórica)
+
+La variable "etapa" integra TNM en una clasificación global (I, II, III, IVA, IVB). Se normaliza y se convierte a factor con orden predefinido de niveles.
+
+```{r}
+data_tiroides_17 |> count(etapa)
+data_tiroides_18 <- data_tiroides_17 |>
+  mutate(
+    etapa = case_when(
+      etapa == "\"\"I\"\"" ~ "I",
+      etapa == "\"\"II\"\"" ~ "II",
+      etapa == "\"\"III\"\"" ~ "III",
+      etapa == "\"\"IVA\"\"" ~ "IVA",
+      etapa == "\"\"IVB\"\"" ~ "IVB",
+      TRUE ~ etapa
+    ),
+    etapa = factor(etapa,
+                  levels = c("I", "II", "III", "IVA", "IVB"),
+                  labels = c("I", "II", "III", "IVA", "IVB"))
+  )
+```
+
+*etapa* queda como factor categórico con cinco niveles, útil para describir la severidad y comparar desenlaces por estadio.
+
+```{r}
+data_tiroides_18 |> count(etapa)
+```
+
+```{r}
+class(data_tiroides_18$etapa)
+```
+
+```{r}
+levels(data_tiroides_18$etapa)
+```
+
+### 4.5. Limpieza de Variables de Seguimiento
+
+En este grupo se incluyen las variables relacionadas con la evolución clínica posterior al tratamiento, como la respuesta obtenida y la posible recurrencia de la enfermedad. Su análisis es fundamental para evaluar la efectividad terapéutica y el pronóstico a largo plazo de los pacientes.
+
+#### 4.5.1. Limpieza y transformación de la variable respuesta (Categórica)
+
+La variable "respuesta" describe el estado de respuesta al tratamiento. Tenía comillas de más; se estandariza y se tipa como factor con cuatro categorías.
+
+```{r}
+data_tiroides_18 |> count(respuesta)
+data_tiroides_19 <- data_tiroides_18 |>
+  mutate(
+    respuesta = case_when(
+      respuesta == "\"\"Excelente\"\"" ~ "Excelente",
+      respuesta == "\"\"Indeterminado\"\"" ~ "Indeterminado",
+      respuesta == "\"\"Incompleto bioquímico\"\"" ~ "Incompleto bioquímico",
+      respuesta == "\"\"Incompleto estructural\"\"" ~ "Incompleto estructural",
+      TRUE ~ respuesta
+    ),
+    respuesta = factor(respuesta,
+                  levels = c("Excelente", "Indeterminado", "Incompleto bioquímico", "Incompleto estructural"),
+                  labels = c("Excelente", "Indeterminado", "Incompleto bioquímico", "Incompleto estructural"))
+  )
+```
+
+La variable queda con cuatro niveles definidos, apta para análisis de resultados y comparación por riesgo o estadio.
+
+```{r}
+data_tiroides_19 |> count(respuesta)
+```
+
+```{r}
+class(data_tiroides_19$respuesta)
+```
+
+```{r}
+levels(data_tiroides_19$respuesta)
+```
+
+#### 4.5.2. Limpieza y transformación de la variable recurrencia (Categórica)
+
+La variable "recurrencia" indica si hubo recurrencia. Algunos registros incluyen tres comillas por lado (*"""No"""*), lo que se corrige; luego se tipa como factor con dos niveles.
+
+```{r}
+data_tiroides_19 |> count(recurrencia)
+data_tiroides_20 <- data_tiroides_19 |>
+  mutate(
+    recurrencia = case_when(
+      recurrencia == "\"\"No\"\"\"" ~ "No",
+      recurrencia == "\"\"Sí\"\"\"" ~ "Sí",
+      TRUE ~ recurrencia
+    ),
+    recurrencia = factor(recurrencia,
+                    levels = c("No", "Sí"),
+                    labels = c("No", "Sí"))
+  )
+```
+
+`recurrencia` queda como factor binario (No, Sí) coherente con la definición clínica, permitiendo análisis de incidencia por subgrupos (por ejemplo, riesgo, N, M).
+
+```{r}
+data_tiroides_20 |> count(recurrencia)
+```
+
+```{r}
+class(data_tiroides_20$recurrencia)
+```
+
+```{r}
+levels(data_tiroides_20$recurrencia)
+```
+
+Para validación manual del resultado, se visualiza la tabla final limpia:
+
+```{r}
+View(data_tiroides_20)
+```
+
+Nota: `View()` abre una vista interactiva en RStudio; no tiene efecto en renderizados no interactivos. Es solo para inspección visual local.
+
+## 5. Exportación del dataset limpio
+
+Guardar el dataset completamente limpio para su uso en análisis posteriores o compartir con el equipo. Se utiliza `write_excel_csv()` por compatibilidad con Excel y delimitación clara.
+
+```{r}
+library(readr)
+write_excel_csv(data_tiroides_20, "C:/Documentos - UPSJB/Estadistica_UPSJB/data/tiroides_limpio.csv")
+```
+
+Se genera el archivo `tiroides_limpio.csv` en la ruta indicada, listo para ser utilizado en análisis descriptivos e inferenciales.
