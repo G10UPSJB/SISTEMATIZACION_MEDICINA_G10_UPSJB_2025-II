@@ -1,0 +1,3 @@
+Este repositorio contiene el desarrollo completo de un proyecto de análisis de datos realizado en RStudio, enfocado en una base de datos de pacientes con afectación en la glándula tiroides. El objetivo principal es aplicar técnicas estadísticas y de ciencia de datos para explorar, limpiar y modelar la información de manera integral.
+
+El repositorio incluye todo el flujo del proyecto: desde la importación, limpieza y preparación del dataset, hasta el análisis descriptivo, la aplicación de pruebas inferenciales y la construcción de modelos predictivos relacionados con la afectación tiroidea. Además, se integra documentación reproducible en Quarto, junto con sus versiones HTML listas para visualizar en cualquier navegador.
